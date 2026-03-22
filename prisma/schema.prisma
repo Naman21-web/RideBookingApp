@@ -10,3 +10,17 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  role      Role
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  RIDER
+  DRIVER
+}

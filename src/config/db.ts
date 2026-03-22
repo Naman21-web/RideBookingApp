@@ -1,19 +1,27 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-let prisma: PrismaClient;
+// const prisma: PrismaClient = new PrismaClient();
+
+const adapter = new PrismaPg({
+      connectionString: process.env.DATABASE_URL!,
+    });
+
+const prisma: PrismaClient = new PrismaClient({
+  adapter, //THIS is the Prisma 7 way
+});
 
 export const connectDB = async () => {
   try {
     console.log("DB URL:", process.env.DATABASE_URL);
 
-    const adapter = new PrismaPg({
-      connectionString: process.env.DATABASE_URL!,
-    });
+    // const adapter = new PrismaPg({
+    //   connectionString: process.env.DATABASE_URL!,
+    // });
 
-    prisma = new PrismaClient({
-      adapter, //THIS is the Prisma 7 way
-    });
+    // prisma = new PrismaClient({
+    //   adapter, //THIS is the Prisma 7 way
+    // });
 
     await prisma.$connect();
 
