@@ -21,3 +21,13 @@ export const getUserByEmailRepo = async (email:string) : Promise<User | null> =>
         where: {email}
     });
 };
+
+export const updateUserRepo = async (
+  id: string,
+  data: any
+) => {
+  return prisma.user.update({
+    where: { id },
+    data,
+  });
+};

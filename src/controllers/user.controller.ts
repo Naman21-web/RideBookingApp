@@ -15,6 +15,12 @@ export const getAllUsers = asyncHandler(async (_:Request,res:Response) => {
 });
 
 export const getUserById = asyncHandler(async (req:Request,res:Response) => {
-    const user = await userService.getUserById(req.params.UserId);
+    const user = await userService.getUserById(req.params.id);
     return successResponse(res, user, 'User fetched',STATUS_CODES.OK);
+});
+
+export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.updateUser(req.params.id, req.body);
+
+  return successResponse(res, user, 'User updated successfully');
 });

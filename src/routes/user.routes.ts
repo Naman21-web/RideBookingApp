@@ -1,11 +1,19 @@
 import { Router } from "express";
-import { createUser, getAllUsers, getUserById } from "../controllers/user.controller";
+import { createUser, getAllUsers, getUserById, updateUser } from "../controllers/user.controller";
+import { validate } from "../middlewares/user.middleware";
+import { createUserSchema, updateUserSchema, userIdParamSchema } from "../validation/user.validation";
 
 const router = Router();
 
 //POST //api/v1/users
-router.post('/',createUser);
-router.get('/:UserId',getUserById);
+router.post('/',validate(createUserSchema,'body'),createUser);
+router.get('/:id',getUserById);
 router.get('/',getAllUsers);
+router.patch(
+  '/:id',
+  validate(userIdParamSchema, 'params'),
+  validate(updateUserSchema, 'body'),
+  updateUser
+);
 
 export default router;

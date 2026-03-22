@@ -22,4 +22,27 @@ export const getUserById = async (id:string): Promise<User | null> => {
         throw new AppError("User not found",STATUS_CODES.NOT_FOUND);
     }
     return user;
-}
+};
+
+export const updateUser = async (
+  id: string,
+  data: any
+) => {
+  // Check user exists
+  const existingUser = await userRepo.getUserByIdRepo(id);
+
+  if (!existingUser) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Optional: email uniqueness check
+  if (data.email) {
+    const emailUser = await userRepo.getUserByEmailRepo(data.email);
+
+    if (emailUser && emailUser.id !== id) {
+      throw new AppError('Email already in use', 400);
+    }
+  }
+
+  return userRepo.updateUserRepo(id, data);
+};
