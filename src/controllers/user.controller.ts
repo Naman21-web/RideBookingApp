@@ -3,9 +3,15 @@ import * as userService from '../services/user.service';
 import { asyncHandler } from "../utils/asyncHandler";
 import { STATUS_CODES } from "../utils/constants";
 import { successResponse } from "../utils/apiResponse";
+import logger from "../utils/logger";
 
 export const createUser = asyncHandler(async (req:Request, res:Response)  => {
     const user = await userService.createUser(req.body);
+
+        logger.info('User created', {
+            userId: user.id,
+            email: user.email,
+        });
     return successResponse(res, user, 'User Created',STATUS_CODES.CREATED);
 });
 
