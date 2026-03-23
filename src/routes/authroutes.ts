@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { validate } from "../middlewares/user.middleware";
+import { loginSchema } from '../validation/auth.validation';
+import { protect } from '../middlewares/auth.middleware';
+import { login } from '../controllers/auth.controller';
+
+const router = Router();
+
+router.post('/login',
+    validate(loginSchema), 
+    protect,
+    login
+);
+
+export default router;
