@@ -5,6 +5,9 @@ export const createUserSchema = z.object({
 
   email: z.string().email('Invalid email format'),
 
+  password: z.string().min(6,'Password must be atleast 6 characters'),
+
+
   phone: z
     .string()
     .regex(/^[0-9]{10}$/, 'Phone must be 10 digits'),
