@@ -18,10 +18,23 @@ model User {
   phone     String   @unique
   password  String
   role      Role
+  vehicles Vehicle[]
   createdAt DateTime @default(now())
 }
 
 enum Role {
   RIDER
   DRIVER
+}
+
+model Vehicle {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  carModel  String
+  carNumber String   @unique
+  color     String
+  capacity  Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
