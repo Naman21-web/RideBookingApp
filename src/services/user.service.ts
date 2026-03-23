@@ -3,13 +3,20 @@ import { createUserInput } from '../types/user.types';
 import {User} from '@prisma/client';
 import { AppError } from '../utils/AppError';
 import { STATUS_CODES } from '../utils/constants';
+import bcrypt from 'bcryptjs';
 
 export const createUser = async (data: createUserInput) : Promise<User> => {
     const existingUser = await userRepo.getUserByEmailRepo(data.email);
     if(existingUser){
         throw new AppError("Email already exists",STATUS_CODES.BAD_REQUEST)
     }
-    return userRepo.createUserRepo(data);
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    return userRepo.createUserRepo({
+        ...data,
+        password:hashedPassword
+    });
 };
 
 export const getAllUsers = async ():Promise<User[]> => {
