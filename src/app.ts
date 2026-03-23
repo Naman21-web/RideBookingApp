@@ -5,13 +5,23 @@ import morgan from 'morgan';
 import { errorHandler } from './middlewares/error.middleware';
 
 import userRoutes from './routes/user.routes';
+import { requestLogger } from './middlewares/requestLogger.middleware';
+import logger from './utils/logger';
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
-app.use(morgan('dev'));
+// app.use(morgan('dev'));
+app.use(
+  morgan('combined', {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
+app.use(requestLogger);
 
 app.use('/api/v1/users',userRoutes)
 
