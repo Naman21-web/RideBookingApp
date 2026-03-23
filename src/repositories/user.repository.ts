@@ -31,3 +31,9 @@ export const updateUserRepo = async (
     data,
   });
 };
+
+export const deleteUserRepo = async (id: string) => {
+  return prisma.user.delete({
+    where: { id },
+  });
+};

@@ -24,3 +24,9 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 
   return successResponse(res, user, 'User updated successfully');
 });
+
+export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+  await userService.deleteUser(req.params.id);
+
+  return successResponse(res, null, 'User deleted successfully');
+});

@@ -46,3 +46,15 @@ export const updateUser = async (
 
   return userRepo.updateUserRepo(id, data);
 };
+
+export const deleteUser = async (id: string) => {
+  const user = await userRepo.getUserByIdRepo(id);
+
+  if (!user) {
+    throw new AppError('User not found', STATUS_CODES.BAD_REQUEST);
+  }
+
+  await userRepo.deleteUserRepo(id);
+
+  return null; // nothing to return
+};
