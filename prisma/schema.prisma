@@ -34,7 +34,16 @@ model Vehicle {
   carNumber String   @unique
   color     String
   capacity  Int
+  carType   CarType
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+enum CarType {
+  RICKSHAW
+  HATCHBACK
+  SEDAN
+  SUV
+  SEVEN_SEATER
 }
