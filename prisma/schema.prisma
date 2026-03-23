@@ -30,11 +30,11 @@ enum Role {
 model Vehicle {
   id        String   @id @default(uuid())
   userId    String   @unique
-  carModel  String
-  carNumber String   @unique
+  vehicleModel  String
+  vehicleNumber String   @unique
   color     String
   capacity  Int
-  carType   CarType
+  vehicleType   CarType
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
