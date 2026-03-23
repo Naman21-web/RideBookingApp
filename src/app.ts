@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import { errorHandler } from './middlewares/error.middleware';
 
 import userRoutes from './routes/user.routes';
+import authRoutes from './routes/auth.routes';
+import vehcileRoutes from './routes/vehicle.routes';
 import { requestLogger } from './middlewares/requestLogger.middleware';
 import logger from './utils/logger';
 
@@ -24,6 +26,8 @@ app.use(
 app.use(requestLogger);
 
 app.use('/api/v1/users',userRoutes)
+app.use('/api/v1/auth',authRoutes)
+app.use('/api/v1/vehicles',vehcileRoutes)
 
 app.use(errorHandler);//errorMiddleware must be last
 
