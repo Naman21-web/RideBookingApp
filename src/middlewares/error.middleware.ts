@@ -11,6 +11,7 @@ export const errorHandler = (
 
     let statusCode = err.statusCode || 500;
     let message = err.message || "Internal Server Error";
+    let errors = err.errors || null;
 
     // Unknown errors
     if (!(err instanceof AppError)) {
@@ -26,6 +27,7 @@ export const errorHandler = (
 
     res.status(statusCode).json({
         success:false,
-        message
+        message,
+        ...(errors && {errors})
     });
 };

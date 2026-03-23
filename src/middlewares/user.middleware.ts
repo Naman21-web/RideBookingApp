@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema } from 'zod';
 import { STATUS_CODES } from '../utils/constants';
+import { AppError } from '../utils/AppError';
 
 export const validate = (
     schema: ZodSchema,
@@ -16,11 +17,7 @@ export const validate = (
             field: err.path.join('.'),
             message: err.message,
         }));
-        return res.status(STATUS_CODES.BAD_REQUEST).json({
-            success: false,
-            message: 'Validation failed',
-            errors: formattedErrors,
-        });
+        return next(new AppError('Validation failed',STATUS_CODES.BAD_REQUEST,formattedErrors));
     }
 
     // overwrite with parsed data
