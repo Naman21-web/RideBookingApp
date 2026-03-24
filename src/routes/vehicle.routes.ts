@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authorize, protect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/user.middleware';
-import { createVehicleSchema } from '../validation/vehicle.validation';
-import { addVehicle } from '../controllers/vehicle.controller';
+import { createVehicleSchema, updateVehicleSchema } from '../validation/vehicle.validation';
+import { addVehicle, updateVehicle } from '../controllers/vehicle.controller';
 
 const router = Router();
 
@@ -12,6 +12,13 @@ router.post(
   authorize('DRIVER'), 
   validate(createVehicleSchema),
   addVehicle
+);
+router.patch(
+  '/',
+  protect,
+  authorize('DRIVER'),
+  validate(updateVehicleSchema),
+  updateVehicle
 );
 
 export default router;

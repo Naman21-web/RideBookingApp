@@ -26,3 +26,20 @@ export const addVehicle = async (userId: string, data: createVehicleInput) => {
         userId
     });
 };
+
+export const updateVehicle = async (
+  userId: string,
+  data: any
+) => {
+    if (!Object.keys(data).length) {
+        throw new AppError('No fields provided for update', STATUS_CODES.BAD_REQUEST);
+    }
+
+  const vehicle = await vehcileRepo.getVehicleByUserId(userId);
+
+  if (!vehicle) {
+    throw new AppError('Vehicle not found', 404);
+  }
+
+  return vehcileRepo.updateVehicleRepo(vehicle.id, data);
+};

@@ -9,4 +9,15 @@ export const addVehicle = asyncHandler(async (req:Request,res:Response) => {
     const vehicle = await vehicleService.addVehicle(userId,req.body);
 
     return successResponse(res,vehicle,"Vehicle added successfully",STATUS_CODES.CREATED);
-})
+});
+
+export const updateVehicle = asyncHandler(async (req: any, res: Response) => {
+  const userId = req.user.userId;
+
+  const updatedVehicle = await vehicleService.updateVehicle(
+    userId,
+    req.body
+  );
+
+  return successResponse(res, updatedVehicle, 'Vehicle updated successfully',STATUS_CODES.OK);
+});
