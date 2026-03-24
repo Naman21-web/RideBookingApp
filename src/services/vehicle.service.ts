@@ -43,3 +43,13 @@ export const updateVehicle = async (
 
   return vehcileRepo.updateVehicleRepo(vehicle.id, data);
 };
+
+export const getVehicle = async (userId: string) => {
+  const vehicle = await vehcileRepo.getVehicleByUserId(userId);
+
+  if (!vehicle) {
+    throw new AppError('Vehicle not found', STATUS_CODES.NOT_FOUND);
+  }
+
+  return vehicle;
+};

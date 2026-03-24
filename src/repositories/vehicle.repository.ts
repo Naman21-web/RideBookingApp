@@ -10,6 +10,15 @@ export const createVehicleRepo = async (data: createVehicleInput): Promise<Vehic
 export const getVehicleByUserId = async (userId: string): Promise<Vehicle> => {
   return prisma.vehicle.findUnique({
     where: { userId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 };
 

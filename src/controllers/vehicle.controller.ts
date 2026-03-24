@@ -21,3 +21,11 @@ export const updateVehicle = asyncHandler(async (req: any, res: Response) => {
 
   return successResponse(res, updatedVehicle, 'Vehicle updated successfully',STATUS_CODES.OK);
 });
+
+export const getVehicle = asyncHandler(async (req: any, res: Response) => {
+  const userId = req.user.userId;
+
+  const vehicle = await vehicleService.getVehicle(userId);
+
+  return successResponse(res, vehicle, 'Vehicle fetched successfully');
+});
