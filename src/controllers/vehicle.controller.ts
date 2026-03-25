@@ -35,3 +35,12 @@ export const getAllVehicles = asyncHandler(async (req:Request, res:Response) => 
 
   return successResponse(res, vehicles, 'All vehicles fetched');
 });
+
+export const updateLocation = asyncHandler(async (req: Request, res:Response) => {
+  const userId = req.user.userId;
+  const { lat, lng } = req.body;
+
+  await vehicleService.updateVehicleLocation(userId, lat, lng);
+
+  return successResponse(res, null, 'Location updated');
+});

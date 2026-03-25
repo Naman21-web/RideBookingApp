@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authorize, protect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/user.middleware';
-import { createVehicleSchema, updateVehicleSchema } from '../validation/vehicle.validation';
-import { addVehicle, getAllVehicles, getVehicle, updateVehicle } from '../controllers/vehicle.controller';
+import { createVehicleSchema, updateLocationSchema, updateVehicleSchema } from '../validation/vehicle.validation';
+import { addVehicle, getAllVehicles, getVehicle, updateLocation, updateVehicle } from '../controllers/vehicle.controller';
 
 const router = Router();
 
@@ -33,6 +33,14 @@ router.get(
   protect,
   authorize('ADMIN'), 
   getAllVehicles
+);
+
+router.post(
+  '/location',
+  protect,
+  authorize('DRIVER'),
+  validate(updateLocationSchema),
+  updateLocation
 );
 
 export default router;

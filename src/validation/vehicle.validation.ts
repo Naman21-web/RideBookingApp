@@ -47,3 +47,8 @@ export const updateVehicleSchema = z
     message: 'Invalid capacity for selected vehicle type',
     path: ['capacity'],
   });
+
+export const updateLocationSchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+});

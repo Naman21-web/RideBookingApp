@@ -57,3 +57,11 @@ export const getVehicle = async (userId: string) => {
 export const getAllVehicles = async () => {
   return vehicleRepo.getAllVehiclesRepo();
 };
+
+export const updateVehicleLocation = async (
+  userId: string,
+  lat: number,
+  lng: number
+) => {     
+    await vehicleRepo.updateVehicleLocationRepo(userId, lat, lng);
+};

@@ -1,7 +1,7 @@
 import prisma from "../config/db";
 import {Vehicle} from '@prisma/client';
 import { createVehicleInput } from '../types/vehicle.types';
-import logger from "../utils/logger";
+import redis from '../config/redis';
 
 export const createVehicleRepo = async (data: createVehicleInput): Promise<Vehicle> => {
   return prisma.vehicle.create({ data });
@@ -47,4 +47,17 @@ export const getAllVehiclesRepo = async () => {
       },
     },
   });
+};
+
+export const updateVehicleLocationRepo = async (
+  userId: string,
+  lat: number,
+  lng: number
+) => {
+  await redis.geoadd(
+    'drivers:locations',
+    lng,
+    lat,
+    userId
+  );
 };
