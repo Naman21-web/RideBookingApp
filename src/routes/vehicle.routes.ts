@@ -29,7 +29,7 @@ router.get(
 );
 
 router.get(
-  '/',
+  '/all',
   protect,
   authorize('ADMIN'), 
   getAllVehicles
