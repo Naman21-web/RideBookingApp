@@ -12,7 +12,7 @@ export const createUserSchema = z.object({
     .string()
     .regex(/^[0-9]{10}$/, 'Phone must be 10 digits'),
 
-  role: z.enum(['RIDER', 'DRIVER']),
+  role: z.enum(['RIDER', 'DRIVER', 'ADMIN']),
 });
 
 export const userIdParamSchema = z.object({
