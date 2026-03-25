@@ -29,3 +29,9 @@ export const getVehicle = asyncHandler(async (req: any, res: Response) => {
 
   return successResponse(res, vehicle, 'Vehicle fetched successfully');
 });
+
+export const getAllVehicles = asyncHandler(async (req:Request, res:Response) => {
+  const vehicles = await vehicleService.getAllVehicles();
+
+  return successResponse(res, vehicles, 'All vehicles fetched');
+});

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authorize, protect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/user.middleware';
 import { createVehicleSchema, updateVehicleSchema } from '../validation/vehicle.validation';
-import { addVehicle, getVehicle, updateVehicle } from '../controllers/vehicle.controller';
+import { addVehicle, getAllVehicles, getVehicle, updateVehicle } from '../controllers/vehicle.controller';
 
 const router = Router();
 
@@ -26,6 +26,13 @@ router.get(
   protect,
   authorize('DRIVER'),
   getVehicle
+);
+
+router.get(
+  '/',
+  protect,
+  authorize('ADMIN'), 
+  getAllVehicles
 );
 
 export default router;

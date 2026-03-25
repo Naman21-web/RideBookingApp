@@ -32,3 +32,19 @@ export const updateVehicleRepo = async (
     data,
   });
 };
+
+export const getAllVehiclesRepo = async () => {
+  return prisma.vehicle.findMany({
+    select: {
+      id: true,
+      vehicleModel: true,
+      vehicleType: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+};

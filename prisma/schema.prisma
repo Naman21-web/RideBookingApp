@@ -17,7 +17,7 @@ model User {
   email     String   @unique
   phone     String   @unique
   password  String
-  role      Role
+  role      Role  @default(RIDER)
   vehicles Vehicle[]
   createdAt DateTime @default(now())
 }
@@ -25,6 +25,7 @@ model User {
 enum Role {
   RIDER
   DRIVER
+  ADMIN
 }
 
 model Vehicle {

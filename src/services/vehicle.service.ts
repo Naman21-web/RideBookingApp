@@ -1,4 +1,4 @@
-import * as vehcileRepo from '../repositories/vehicle.repository';
+import * as vehicleRepo from '../repositories/vehicle.repository';
 import * as userRepo from '../repositories/user.repository';
 import { createVehicleInput } from '../types/vehicle.types';
 import { AppError } from '../utils/AppError';
@@ -16,12 +16,12 @@ export const addVehicle = async (userId: string, data: createVehicleInput) => {
         throw new AppError('Only driver can add vehicle',STATUS_CODES.NOT_FOUND);
     }
 
-    const existingVehicle = await vehcileRepo.getVehicleByUserId(userId);
+    const existingVehicle = await vehicleRepo.getVehicleByUserId(userId);
 
     if(existingVehicle){
         throw new AppError("Vehicle already exist for user",STATUS_CODES.BAD_REQUEST);
     }
-    return vehcileRepo.createVehicleRepo({
+    return vehicleRepo.createVehicleRepo({
         ...data,
         userId
     });
@@ -35,21 +35,25 @@ export const updateVehicle = async (
         throw new AppError('No fields provided for update', STATUS_CODES.BAD_REQUEST);
     }
 
-  const vehicle = await vehcileRepo.getVehicleByUserId(userId);
+  const vehicle = await vehicleRepo.getVehicleByUserId(userId);
 
   if (!vehicle) {
     throw new AppError('Vehicle not found', 404);
   }
 
-  return vehcileRepo.updateVehicleRepo(vehicle.id, data);
+  return vehicleRepo.updateVehicleRepo(vehicle.id, data);
 };
 
 export const getVehicle = async (userId: string) => {
-  const vehicle = await vehcileRepo.getVehicleByUserId(userId);
+  const vehicle = await vehicleRepo.getVehicleByUserId(userId);
 
   if (!vehicle) {
     throw new AppError('Vehicle not found', STATUS_CODES.NOT_FOUND);
   }
 
   return vehicle;
+};
+
+export const getAllVehicles = async () => {
+  return vehicleRepo.getAllVehiclesRepo();
 };
