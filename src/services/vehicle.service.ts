@@ -65,3 +65,19 @@ export const updateVehicleLocation = async (
 ) => {     
     await vehicleRepo.updateVehicleLocationRepo(userId, lat, lng);
 };
+
+export const getNearbyVehicles = async (
+  lat: number,
+  lng: number,
+  radius: number,
+  vehicleType
+) => {
+  const driverIds:(string | null)[] = await vehicleRepo.getNearbyDriverIds(
+    lat,
+    lng,
+    radius
+  );
+
+  const users = await vehicleRepo.getVehiclesByUserIds(driverIds,vehicleType);
+  return users;
+};

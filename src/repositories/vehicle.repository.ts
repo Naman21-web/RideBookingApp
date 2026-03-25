@@ -49,15 +49,60 @@ export const getAllVehiclesRepo = async () => {
   });
 };
 
+export const getVehiclesByUserIds = async (driverIds:(string | null)[],vehicleType) => {
+  return prisma.vehicle.findMany({
+    where: {
+      userId: { in: driverIds },
+      ...(vehicleType && { vehicleType }), 
+    },
+    select: {
+      id: true,
+      vehicleModel: true,
+      vehicleType: true,
+      capacity: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+}
+
 export const updateVehicleLocationRepo = async (
   userId: string,
   lat: number,
   lng: number
 ) => {
-  await redis.geoadd(
-    'drivers:locations',
+  const isBusy = await redis.get(`driver:${userId}:busy`);
+
+  if (!isBusy) {
+    await redis.geoadd(
+      'drivers:available:locations',
+      lng,
+      lat,
+      userId
+    );
+  }
+};
+
+export const getNearbyDriverIds = async (
+  lat: number,
+  lng: number,
+  radius: number
+) : Promise<(string | null)[]>=> {
+  const driverIds = await redis.geosearch(
+    'drivers:available:locations',
+    'FROMLONLAT',
     lng,
     lat,
-    userId
+    'BYRADIUS',
+    radius,
+    'km'
   );
+  
+  console.log("DriverIds: ",driverIds);
+  
+  return driverIds;
 };

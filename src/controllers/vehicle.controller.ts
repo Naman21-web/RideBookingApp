@@ -44,3 +44,16 @@ export const updateLocation = asyncHandler(async (req: Request, res:Response) =>
 
   return successResponse(res, null, 'Location updated');
 });
+
+export const getNearbyVehicles = asyncHandler(async (req:Request, res:Response) => {
+  const { lat, lng, radius = 5,vehicleType } = req.query;
+
+  const vehicles = await vehicleService.getNearbyVehicles(
+    Number(lat),
+    Number(lng),
+    Number(radius),
+    vehicleType
+  );
+
+  return successResponse(res, vehicles, 'Nearby vehicles fetched');
+});

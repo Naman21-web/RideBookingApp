@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authorize, protect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/user.middleware';
-import { createVehicleSchema, updateLocationSchema, updateVehicleSchema } from '../validation/vehicle.validation';
-import { addVehicle, getAllVehicles, getVehicle, updateLocation, updateVehicle } from '../controllers/vehicle.controller';
+import { createVehicleSchema, nearbyVehiclesSchema, updateLocationSchema, updateVehicleSchema } from '../validation/vehicle.validation';
+import { addVehicle, getAllVehicles, getNearbyVehicles, getVehicle, updateLocation, updateVehicle } from '../controllers/vehicle.controller';
 
 const router = Router();
 
@@ -41,6 +41,13 @@ router.post(
   authorize('DRIVER'),
   validate(updateLocationSchema),
   updateLocation
+);
+
+router.get(
+  '/nearby',
+  protect,
+  validate(nearbyVehiclesSchema, 'query'),
+  getNearbyVehicles
 );
 
 export default router;
