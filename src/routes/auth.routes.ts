@@ -8,7 +8,6 @@ const router = Router();
 
 router.post('/login',
     validate(loginSchema), 
-    protect,
     login
 );
 
