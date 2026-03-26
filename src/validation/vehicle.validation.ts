@@ -47,3 +47,32 @@ export const updateVehicleSchema = z
     message: 'Invalid capacity for selected vehicle type',
     path: ['capacity'],
   });
+
+export const updateLocationSchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+});
+
+import { z } from 'zod';
+
+export const nearbyVehiclesSchema = z.object({
+  lat: z.coerce.number({
+    required_error: 'Latitude is required',
+    invalid_type_error: 'Latitude must be a number',
+  }),
+
+  lng: z.coerce.number({
+    required_error: 'Longitude is required',
+    invalid_type_error: 'Longitude must be a number',
+  }),
+
+  radius: z.coerce
+    .number()
+    .min(1, 'Radius must be at least 1 km')
+    .max(50, 'Radius too large')
+    .optional(),
+
+  vehicleType: z
+    .enum(['RICKSHAW', 'HATCHBACK', 'SEDAN', 'SUV', 'SEVEN_SEATER'])
+    .optional(),    
+});

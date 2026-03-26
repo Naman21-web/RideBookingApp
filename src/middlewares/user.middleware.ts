@@ -5,10 +5,11 @@ import { AppError } from '../utils/AppError';
 
 export const validate = (
     schema: ZodSchema,
-    source: 'body' | 'params' = 'body'
+    source: 'body' | 'params' | 'query' = 'body'
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const data = source === 'body' ? req.body : req.params;
+
+    const data = source === 'body' ? req.body : source === 'query' ? req.query : req.params;
 
     const result = schema.safeParse(data);
 

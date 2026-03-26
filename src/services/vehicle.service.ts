@@ -16,7 +16,7 @@ export const addVehicle = async (userId: string, data: createVehicleInput) => {
         throw new AppError('Only driver can add vehicle',STATUS_CODES.NOT_FOUND);
     }
 
-    const existingVehicle = await vehicleRepo.getVehicleByUserId(userId);
+    const existingVehicle = await vehicleRepo.getVehicleByUserIdRepo(userId);
 
     if(existingVehicle){
         throw new AppError("Vehicle already exist for user",STATUS_CODES.BAD_REQUEST);
@@ -35,7 +35,7 @@ export const updateVehicle = async (
         throw new AppError('No fields provided for update', STATUS_CODES.BAD_REQUEST);
     }
 
-  const vehicle = await vehicleRepo.getVehicleByUserId(userId);
+  const vehicle = await vehicleRepo.getVehicleByUserIdRepo(userId);
 
   if (!vehicle) {
     throw new AppError('Vehicle not found', 404);
@@ -45,7 +45,7 @@ export const updateVehicle = async (
 };
 
 export const getVehicle = async (userId: string) => {
-  const vehicle = await vehicleRepo.getVehicleByUserId(userId);
+  const vehicle = await vehicleRepo.getVehicleByUserIdRepo(userId);
 
   if (!vehicle) {
     throw new AppError('Vehicle not found', STATUS_CODES.NOT_FOUND);
@@ -57,3 +57,44 @@ export const getVehicle = async (userId: string) => {
 export const getAllVehicles = async () => {
   return vehicleRepo.getAllVehiclesRepo();
 };
+
+export const updateVehicleLocation = async (
+  userId: string,
+  lat: number,
+  lng: number
+) => {     
+    await vehicleRepo.updateVehicleLocationRepo(userId, lat, lng);
+};
+
+export const getNearbyVehicles = async (
+  lat: number,
+  lng: number,
+  radius: number,
+  vehicleType
+) => {
+  const driverIds:(string | null)[] = await vehicleRepo.getNearbyDriverIdsRepo(
+    lat,
+    lng,
+    radius
+  );
+
+  const users = await vehicleRepo.getVehiclesByUserIdsRepo(driverIds,vehicleType);
+  return users;
+};
+
+export const goOffline = async (userId: string) => {
+    vehicleRepo.goOfflineRepo(userId);
+};
+
+export const goOnline = async (userId: string) => {
+    vehicleRepo.goOnlineRepo(userId);
+};
+
+export const goBusy = async (userId:string) => {
+    vehicleRepo.goBusyRepo(userId);
+}
+
+export const goAvailable = async (userId:string) => {
+    vehicleRepo.goAvailableRepo(userId);
+}
+ 

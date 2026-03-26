@@ -35,3 +35,49 @@ export const getAllVehicles = asyncHandler(async (req:Request, res:Response) => 
 
   return successResponse(res, vehicles, 'All vehicles fetched');
 });
+
+export const updateLocation = asyncHandler(async (req: Request, res:Response) => {
+  const userId = req.user.userId;
+  const { lat, lng } = req.body;
+
+  await vehicleService.updateVehicleLocation(userId, lat, lng);
+
+  return successResponse(res, null, 'Location updated',STATUS_CODES.NO_CONTENT);
+});
+
+export const getNearbyVehicles = asyncHandler(async (req:Request, res:Response) => {
+  const { lat, lng, radius = 5,vehicleType } = req.query;
+
+  const vehicles = await vehicleService.getNearbyVehicles(
+    Number(lat),
+    Number(lng),
+    Number(radius),
+    vehicleType
+  );
+
+  return successResponse(res, vehicles, 'Nearby vehicles fetched');
+});
+
+export const goOffline = asyncHandler(async (req:Request, res:Response) => {
+    const userId = req.user.userId;
+    vehicleService.goOffline(userId);
+    return successResponse(res, null, 'Vehicle Status Updated Successfully',STATUS_CODES.NO_CONTENT);
+});
+
+export const goOnline = asyncHandler(async (req:Request, res:Response) => {
+    const userId = req.user.userId;
+    vehicleService.goOnline(userId);
+    return successResponse(res, null, 'Vehicle Status Updated Successfully',STATUS_CODES.NO_CONTENT);
+});
+
+export const goBusy = asyncHandler(async (req:Request, res:Response) => {
+    const userId = req.user.userId;
+    vehicleService.goBusy(userId);
+    return successResponse(res, null, 'Vehicle Status Updated Successfully',STATUS_CODES.NO_CONTENT);
+});
+
+export const goAvailable = asyncHandler(async (req:Request, res:Response) => {
+    const userId = req.user.userId;
+    vehicleService.goAvailable(userId);
+    return successResponse(res, null, 'Vehicle Status Updated Successfully',STATUS_CODES.NO_CONTENT);
+});
