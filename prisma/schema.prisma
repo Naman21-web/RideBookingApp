@@ -12,14 +12,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  phone     String   @unique
-  password  String
-  role      Role  @default(RIDER)
-  vehicles Vehicle[]
-  createdAt DateTime @default(now())
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  phone    String @unique
+  password String
+  role     Role   @default(RIDER)
+
+  vehicles    Vehicle[]
+  rides       Ride[]    @relation("UserRides")
+  driverRides Ride[]    @relation("DriverRides")
+  createdAt   DateTime  @default(now())
 }
 
 enum Role {
@@ -29,16 +32,17 @@ enum Role {
 }
 
 model Vehicle {
-  id        String   @id @default(uuid())
-  userId    String   @unique
+  id            String   @id @default(uuid())
+  userId        String   @unique
   vehicleModel  String
   vehicleNumber String   @unique
-  color     String
-  capacity  Int
+  color         String
+  capacity      Int
   vehicleType   CarType
-  createdAt DateTime @default(now())
+  createdAt     DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  rides Ride[]
 }
 
 enum CarType {
@@ -47,4 +51,38 @@ enum CarType {
   SEDAN
   SUV
   SEVEN_SEATER
+}
+
+model Ride {
+  id String @id @default(uuid())
+
+  userId    String
+  driverId  String
+  vehicleId String
+
+  pickupLat Float
+  pickupLng Float
+  dropLat   Float
+  dropLng   Float
+
+  distance     Float? // optional (store after calculation)
+  fare         Float? // optional (store final price)
+  cancelReason String?
+
+  status RideStatus @default(REQUESTED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation("UserRides", fields: [userId], references: [id])
+  driver  User    @relation("DriverRides", fields: [driverId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+}
+
+enum RideStatus {
+  REQUESTED
+  ACCEPTED
+  ONGOING
+  COMPLETED
+  CANCELLED
 }
