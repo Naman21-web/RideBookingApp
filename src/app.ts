@@ -6,7 +6,8 @@ import { errorHandler } from './middlewares/error.middleware';
 
 import userRoutes from './routes/user.routes';
 import authRoutes from './routes/auth.routes';
-import vehcileRoutes from './routes/vehicle.routes';
+import vehicleRoutes from './routes/vehicle.routes';
+import rideRoutes from './routes/ride.routes';
 import { requestLogger } from './middlewares/requestLogger.middleware';
 import logger from './utils/logger';
 
@@ -27,7 +28,8 @@ app.use(requestLogger);
 
 app.use('/api/v1/users',userRoutes)
 app.use('/api/v1/auth',authRoutes)
-app.use('/api/v1/vehicles',vehcileRoutes)
+app.use('/api/v1/vehicles',vehicleRoutes)
+app.use('/api/v1/rides',rideRoutes)
 
 app.use(errorHandler);//errorMiddleware must be last
 
