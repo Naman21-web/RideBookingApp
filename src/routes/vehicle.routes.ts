@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authorize, protect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/user.middleware';
 import { createVehicleSchema, nearbyVehiclesSchema, updateLocationSchema, updateVehicleSchema } from '../validation/vehicle.validation';
-import { addVehicle, getAllVehicles, getNearbyVehicles, getVehicle, updateLocation, updateVehicle } from '../controllers/vehicle.controller';
+import { addVehicle, getAllVehicles, getNearbyVehicles, getVehicle, goAvailable, goBusy, goOffline, goOnline, updateLocation, updateVehicle } from '../controllers/vehicle.controller';
 
 const router = Router();
 
@@ -48,6 +48,35 @@ router.get(
   protect,
   validate(nearbyVehiclesSchema, 'query'),
   getNearbyVehicles
+);
+
+router.post(
+  '/offline',
+  protect,
+  authorize('DRIVER'),  
+  goOffline
+);
+
+router.post(
+  '/online',
+  protect,
+  authorize('DRIVER'),  
+  goOnline
+);
+
+
+router.post(
+  '/busy',
+  protect,
+  authorize('DRIVER'),  
+  goBusy
+);
+
+router.post(
+  '/available',
+  protect,
+  authorize('DRIVER'),  
+  goAvailable
 );
 
 export default router;

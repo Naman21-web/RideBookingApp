@@ -75,6 +75,10 @@ export const updateVehicleLocationRepo = async (
   lat: number,
   lng: number
 ) => {
+  const isOffline = await redis.get(`driver:${userId}:offline`);
+
+  if (isOffline) return;
+
   const isBusy = await redis.get(`driver:${userId}:busy`);
 
   if (!isBusy) {
@@ -106,3 +110,21 @@ export const getNearbyDriverIds = async (
   
   return driverIds;
 };
+
+export const goOffline = async (userId: string) => {
+  await redis.zrem('drivers:available:locations', userId);
+
+  await redis.set(`driver:${userId}:offline`, '1');
+};
+
+export const goOnline = async (userId: string) => {
+  await redis.del(`driver:${userId}:offline`);
+};
+
+export const goBusy = async (userId:string) => {
+  await redis.set(`driver:${userId}:busy`,'1');
+}
+
+export const goAvailable = async (userId:string) => {
+  await redis.del(`driver:${userId}:busy`,'1');
+}
