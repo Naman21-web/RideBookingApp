@@ -6,3 +6,10 @@ export interface createVehicleInput {
     capacity: String;
     carType: 'RICKSHAW'|'HATCHBACK'|'SEDAN'|'SUV'|'SEVEN_SEATER';
 }
+
+export type VehicleType =
+  | 'RICKSHAW'
+  | 'HATCHBACK'
+  | 'SEDAN'
+  | 'SUV'
+  | 'SEVEN_SEATER';

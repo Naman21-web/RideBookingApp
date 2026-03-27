@@ -7,7 +7,7 @@ export const createVehicleRepo = async (data: createVehicleInput): Promise<Vehic
   return prisma.vehicle.create({ data });
 };
 
-export const getVehicleByUserId = async (userId: string): Promise<Vehicle> => {
+export const getVehicleByUserIdRepo = async (userId: string): Promise<Vehicle> => {
   return prisma.vehicle.findUnique({
     where: { userId },
     include: {
@@ -49,7 +49,7 @@ export const getAllVehiclesRepo = async () => {
   });
 };
 
-export const getVehiclesByUserIds = async (driverIds:(string | null)[],vehicleType) => {
+export const getVehiclesByUserIdsRepo = async (driverIds:(string | null)[],vehicleType) => {
   return prisma.vehicle.findMany({
     where: {
       userId: { in: driverIds },
@@ -79,9 +79,9 @@ export const updateVehicleLocationRepo = async (
 
   if (isOffline) return;
 
-  const isBusy = await redis.get(`driver:${userId}:busy`);
+  const hasActiveRide = await redis.get(`driver:${userId}:activeRide`);
 
-  if (!isBusy) {
+  if (!hasActiveRide) {
     await redis.geoadd(
       'drivers:available:locations',
       lng,
@@ -91,7 +91,7 @@ export const updateVehicleLocationRepo = async (
   }
 };
 
-export const getNearbyDriverIds = async (
+export const getNearbyDriverIdsRepo = async (
   lat: number,
   lng: number,
   radius: number
@@ -111,20 +111,30 @@ export const getNearbyDriverIds = async (
   return driverIds;
 };
 
-export const goOffline = async (userId: string) => {
+export const goOfflineRepo = async (userId: string) => {
   await redis.zrem('drivers:available:locations', userId);
 
   await redis.set(`driver:${userId}:offline`, '1');
 };
 
-export const goOnline = async (userId: string) => {
+export const goOnlineRepo = async (userId: string) => {
   await redis.del(`driver:${userId}:offline`);
 };
 
-export const goBusy = async (userId:string) => {
-  await redis.set(`driver:${userId}:busy`,'1');
+export const goBusyRepo = async (userId:string) => {
+  const result = await redis.set(`driver:${userId}:busy`,'1','NX','EX',300);
+  return result === 'OK';
 }
 
-export const goAvailable = async (userId:string) => {
-  await redis.del(`driver:${userId}:busy`,'1');
+export const goAvailableRepo = async (userId:string) => {
+  await redis.del(`driver:${userId}:busy`);
 }
+
+export const goActiveRepo = async (userId:string) => {
+  await redis.set(`driver:${userId}:activeRide`, '1');
+  await redis.zrem(
+        'drivers:available:locations',
+        userId
+      );
+}
+
