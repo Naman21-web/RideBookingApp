@@ -125,6 +125,11 @@ export const goOfflineRepo = async (userId: string) => {
   await redis.set(`driver:${userId}:offline`, '1');
 };
 
+export const checkOfflineRepo = async (userId: string)  => {
+  const isOffline = redis.get(`driver:${userId}:offline`);
+  return isOffline;
+}
+
 export const goOnlineRepo = async (userId: string) => {
   await redis.del(`driver:${userId}:offline`);
 };
@@ -155,7 +160,7 @@ export const completeRideRepo = async (rideId: string) => {
     where: { id: rideId },
     data: {
       status: 'COMPLETED',
-      completedAt: new Date(),
+      // completedAt: new Date(),
     },
   });
 };

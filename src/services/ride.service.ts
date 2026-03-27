@@ -141,9 +141,9 @@ export const cancelRide = async (
 
     // add driver back to geo set
     await vehicleRepo.changeVehcileLocationRepo(
+      driverId,
       Number(ride.pickupLng),
-      Number(ride.pickupLat),
-      driverId
+      Number(ride.pickupLat)
     );
   }
 
@@ -160,12 +160,12 @@ export const completeRide = async (
     throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
   }
 
-  // 🔒 Ensure correct driver
+  // Ensure correct driver
   if (ride.driverId !== driverId) {
     throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
   }
 
-  // 🚫 Only ongoing rides can be completed
+  // Only ongoing rides can be completed
   if (ride.status !== 'ONGOING') {
     throw new AppError(
       `Cannot complete ride in ${ride.status} state`,
@@ -181,11 +181,11 @@ export const completeRide = async (
   // remove active ride flag
   vehicleRepo.goInactiveRepo(driverId);
 
-  // ✅ Add driver back to geo set (available again)
+  // Add driver back to geo set (available again)
   await vehicleRepo.changeVehcileLocationRepo(
+    driverId,
     Number(ride.dropLng),
-    Number(ride.dropLat),
-    driverId
+    Number(ride.dropLat)
   );
 
   return updatedRide;
@@ -198,18 +198,18 @@ export const acceptRide = async (
   const ride = await rideRepo.getRideByIdRepo(rideId);
 
   if (!ride) {
-    throw new AppError('Ride not found', 404);
+    throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
   }
 
-  // 🔒 Only assigned driver can accept
+  // Only assigned driver can accept
   if (ride.driverId !== driverId) {
-    throw new AppError('Unauthorized', 403);
+    throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
   }
 
   if (ride.status !== 'REQUESTED') {
     throw new AppError(
       `Cannot accept ride in ${ride.status}`,
-      400
+      STATUS_CODES.BAD_REQUEST
     );
   }
 
@@ -218,6 +218,78 @@ export const acceptRide = async (
     rideId,
     'ACCEPTED'
   );
+
+  return updatedRide;
+};
+
+export const rejectRide = async (
+  rideId: string,
+  driverId: string
+) => {
+  const ride = await rideRepo.getRideByIdRepo(rideId);
+
+  if (!ride) {
+    throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
+  }
+
+  if (ride.driverId !== driverId) {
+    throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
+  }
+
+  if (ride.status !== 'REQUESTED') {
+    throw new AppError(
+      `Cannot reject ride in ${ride.status}`,
+      STATUS_CODES.BAD_REQUEST
+    );
+  }
+
+  // 1. Release driver
+  vehicleRepo.goInactiveRepo(driverId);
+
+  const isOffline = await vehicleRepo.checkOfflineRepo(driverId);
+
+  if (!isOffline) {
+    await vehicleRepo.changeVehcileLocationRepo(
+      driverId,
+      Number(ride.pickupLng),
+      Number(ride.pickupLat)
+    );
+  }
+
+  // 2. (Simple approach) mark ride unassigned
+  const updatedRide = await rideRepo.updateRideStatusRepo(
+    rideId,
+    'REQUESTED'
+  );
+
+  return updatedRide;
+};
+
+export const startRide = async (
+  rideId: string,
+  driverId: string
+) => {
+  const ride = await rideRepo.getRideByIdRepo(rideId);
+
+  if (!ride) {
+    throw new AppError('Ride not found', 404);
+  }
+
+  // Ensure correct driver
+  if (ride.driverId !== driverId) {
+    throw new AppError('Unauthorized', 403);
+  }
+
+  // Only accepted rides can start
+  if (ride.status !== 'ACCEPTED') {
+    throw new AppError(
+      `Cannot start ride in ${ride.status} state`,
+      400
+    );
+  }
+
+  // Update DB
+  const updatedRide = await rideRepo.startRideRepo(rideId);
 
   return updatedRide;
 };

@@ -35,7 +35,7 @@ export const completeRideRepo = async (rideId: string) => {
     where: { id: rideId },
     data: {
       status: 'COMPLETED',
-      completedAt: new Date(),
+      // completedAt: new Date(),
     },
   });
 };
@@ -47,5 +47,15 @@ export const updateRideStatusRepo = async (
   return prisma.ride.update({
     where: { id: rideId },
     data: { status },
+  });
+};
+
+export const startRideRepo = async (rideId: string) => {
+  return prisma.ride.update({
+    where: { id: rideId },
+    data: {
+      status: 'ONGOING',
+      // startedAt: new Date(),
+    },
   });
 };

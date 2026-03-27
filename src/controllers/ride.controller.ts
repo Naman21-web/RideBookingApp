@@ -41,3 +41,30 @@ export const completeRide = asyncHandler(async (req: any, res) => {
 
   return successResponse(res, ride, 'Ride completed successfully');
 });
+
+export const acceptRide = asyncHandler(async (req: any, res) => {
+  const { rideId } = req.params;
+  const driverId = req.user.userId;
+
+  const ride = await rideService.acceptRide(rideId, driverId);
+
+  return successResponse(res, ride, 'Ride accepted');
+});
+
+export const rejectRide = asyncHandler(async (req: any, res) => {
+  const { rideId } = req.params;
+  const driverId = req.user.userId;
+
+  const ride = await rideService.rejectRide(rideId, driverId);
+
+  return successResponse(res, ride, 'Ride rejected');
+});
+
+export const startRide = asyncHandler(async (req: any, res) => {
+  const { rideId } = req.params;
+  const driverId = req.user.userId;
+
+  const ride = await rideService.startRide(rideId, driverId);
+
+  return successResponse(res, ride, 'Ride started successfully');
+});
