@@ -136,3 +136,17 @@ export const getRides = asyncHandler(async(req:Request,res:Response) => {
   const rides = await rideService.getRides(id,page,limit,role);
   return successResponse(res, rides, 'Rides fetched');
 });
+
+export const getRideDetailsById = asyncHandler(async (req: any, res) => {
+  const { rideId } = req.params;
+  const userId = req.user.userId;
+  const role = req.user.role;
+
+  const ride = await rideService.getRideDetailsById(
+    rideId,
+    userId,
+    role
+  );
+
+  return successResponse(res, ride, 'Ride fetched successfully');
+});

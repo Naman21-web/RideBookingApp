@@ -109,3 +109,14 @@ export const getDriverRidesRepo = async (
     },
   });
 };
+
+export const getRideDetailsByIdRepo = async (rideId: string) => {
+  return prisma.ride.findUnique({
+    where: { id: rideId },
+    include: {
+      user: { select: { id: true, name: true } },
+      driver: { select: { id: true, name: true } },
+      vehicle: true,
+    },
+  });
+};

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { acceptRide, cancelRide, completeRide, createRide, estimateFare, getAllRides, getDriverRides, getRides, getUserRides, rejectRide, startRide } from '../controllers/ride.controller';
+import { acceptRide, cancelRide, completeRide, createRide, estimateFare, getAllRides, getDriverRides, getRideDetailsById, getRides, getUserRides, rejectRide, startRide } from '../controllers/ride.controller';
 import { validate } from '../middlewares/user.middleware';
 import { createRideSchema, estimateFareSchema } from '../validation/ride.validation';
 import { authorize, protect } from '../middlewares/auth.middleware';
@@ -77,6 +77,12 @@ router.get(
   '/', 
   protect, 
   getRides
+);
+
+router.get(
+  '/:rideId', 
+  protect, 
+  getRideDetailsById
 );
 
 export default router;

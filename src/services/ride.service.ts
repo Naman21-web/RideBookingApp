@@ -334,3 +334,25 @@ export const getRides = async (
   }
 };
 
+export const getRideDetailsById = async (
+  rideId: string,
+  userId: string,
+  role: string
+) => {
+  const ride = await rideRepo.getRideDetailsByIdRepo(rideId);
+
+  if (!ride) {
+    throw new AppError('Ride not found', 404);
+  }
+
+  const isRider = ride.userId === userId;
+  const isDriver = ride.driverId === userId;
+  const isAdmin = role === 'ADMIN';
+
+  if (!isRider && !isDriver && !isAdmin) {
+    throw new AppError('Unauthorized access to ride', STATUS_CODES.UNAUTHORISED);
+  }
+
+  return ride;
+};
+
