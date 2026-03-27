@@ -82,14 +82,22 @@ export const updateVehicleLocationRepo = async (
   const hasActiveRide = await redis.get(`driver:${userId}:activeRide`);
 
   if (!hasActiveRide) {
-    await redis.geoadd(
-      'drivers:available:locations',
-      lng,
-      lat,
-      userId
-    );
+    await changeVehcileLocationRepo(userId,lat,lng)
   }
 };
+
+export const changeVehcileLocationRepo = async (
+  userId: string,
+  lat: number,
+  lng: number
+) => {
+  await redis.geoadd(
+    'drivers:available:locations',
+    lng,
+    lat,
+    userId
+  );
+}
 
 export const getNearbyDriverIdsRepo = async (
   lat: number,
@@ -136,5 +144,9 @@ export const goActiveRepo = async (userId:string) => {
         'drivers:available:locations',
         userId
       );
+}
+
+export const  goInactiveRepo = async (userId:string) => {
+  await redis.del(`driver:${userId}:activeRide`);
 }
 

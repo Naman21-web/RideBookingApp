@@ -118,36 +118,31 @@ export const cancelRide = async (
 
   // Optional: ensure only owner can cancel
   if (ride.userId !== userId) {
-    throw new AppError('Unauthorized', STATUS_CODES.UNAUTHORISED);
+    throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
   }
 
   // Check cancellable state
   if (!['REQUESTED', 'ACCEPTED'].includes(ride.status)) {
     throw new AppError(
       `Cannot cancel ride in ${ride.status} state`,
-      STATUS_CODES.NOT_FOUND
+      STATUS_CODES.BAD_REQUEST
     );
   }
 
   // 1. Update DB
   const updatedRide = await rideRepo.cancelRideRepo(rideId);
 
-  // 2. 🚗 Handle Redis (VERY IMPORTANT)
+  // 2. Handle Redis 
 
   const driverId = ride.driverId;
 
   if (driverId) {
-    // ❌ remove active ride flag
-    await redis.del(`driver:${driverId}:activeRide`);
+    vehicleRepo.goInactiveRepo(driverId);
 
-    // ❌ remove lock (optional safety)
-    await redis.del(`lock:driver:${driverId}`);
-
-    // ✅ add driver back to geo set
-    await redis.geoadd(
-      'drivers:available:locations',
-      ride.pickupLng,
-      ride.pickupLat,
+    // add driver back to geo set
+    await vehicleRepo.changeVehcileLocationRepo(
+      Number(ride.pickupLng),
+      Number(ride.pickupLat),
       driverId
     );
   }

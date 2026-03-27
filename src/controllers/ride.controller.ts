@@ -23,3 +23,12 @@ export const createRide = asyncHandler(async (req: any, res) => {
 
   return successResponse(res, ride, 'Ride created successfully',STATUS_CODES.CREATED);
 });
+
+export const cancelRide = asyncHandler(async (req: Request, res:Response) => {
+  const { rideId } = req.params;
+  const userId = req.user.userId;
+
+  const ride = await rideService.cancelRide(rideId, userId);
+
+  return successResponse(res, ride, 'Ride cancelled successfully');
+});

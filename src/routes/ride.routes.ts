@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRide, estimateFare } from '../controllers/ride.controller';
+import { cancelRide, createRide, estimateFare } from '../controllers/ride.controller';
 import { validate } from '../middlewares/user.middleware';
 import { createRideSchema, estimateFareSchema } from '../validation/ride.validation';
 import { protect } from '../middlewares/auth.middleware';
@@ -17,6 +17,12 @@ router.post(
   protect,
   validate(createRideSchema),
   createRide
+);
+
+router.patch(
+  '/:rideId/cancel', 
+  protect, 
+  cancelRide
 );
 
 export default router;
