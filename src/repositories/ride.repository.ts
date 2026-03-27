@@ -29,3 +29,23 @@ export const cancelRideRepo = async (
     },
   });
 };
+
+export const completeRideRepo = async (rideId: string) => {
+  return prisma.ride.update({
+    where: { id: rideId },
+    data: {
+      status: 'COMPLETED',
+      completedAt: new Date(),
+    },
+  });
+};
+
+export const updateRideStatusRepo = async (
+  rideId: string,
+  status: string
+) => {
+  return prisma.ride.update({
+    where: { id: rideId },
+    data: { status },
+  });
+};

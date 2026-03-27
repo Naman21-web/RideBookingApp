@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { cancelRide, createRide, estimateFare } from '../controllers/ride.controller';
+import { cancelRide, completeRide, createRide, estimateFare } from '../controllers/ride.controller';
 import { validate } from '../middlewares/user.middleware';
 import { createRideSchema, estimateFareSchema } from '../validation/ride.validation';
-import { protect } from '../middlewares/auth.middleware';
+import { authorize, protect } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -23,6 +23,13 @@ router.patch(
   '/:rideId/cancel', 
   protect, 
   cancelRide
+);
+
+router.patch(
+  '/:rideId/complete', 
+  protect,
+  authorize('DRIVER'), 
+  completeRide
 );
 
 export default router;

@@ -32,3 +32,12 @@ export const cancelRide = asyncHandler(async (req: Request, res:Response) => {
 
   return successResponse(res, ride, 'Ride cancelled successfully');
 });
+
+export const completeRide = asyncHandler(async (req: any, res) => {
+  const { rideId } = req.params;
+  const driverId = req.user.userId; // driver logged in
+
+  const ride = await rideService.completeRide(rideId, driverId);
+
+  return successResponse(res, ride, 'Ride completed successfully');
+});

@@ -148,5 +148,15 @@ export const goActiveRepo = async (userId:string) => {
 
 export const  goInactiveRepo = async (userId:string) => {
   await redis.del(`driver:${userId}:activeRide`);
-}
+};
+
+export const completeRideRepo = async (rideId: string) => {
+  return prisma.ride.update({
+    where: { id: rideId },
+    data: {
+      status: 'COMPLETED',
+      completedAt: new Date(),
+    },
+  });
+};
 
