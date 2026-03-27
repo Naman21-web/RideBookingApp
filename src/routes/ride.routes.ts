@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { acceptRide, cancelRide, completeRide, createRide, estimateFare, rejectRide, startRide } from '../controllers/ride.controller';
+import { acceptRide, cancelRide, completeRide, createRide, estimateFare, getAllRides, getDriverRides, getRides, getUserRides, rejectRide, startRide } from '../controllers/ride.controller';
 import { validate } from '../middlewares/user.middleware';
 import { createRideSchema, estimateFareSchema } from '../validation/ride.validation';
 import { authorize, protect } from '../middlewares/auth.middleware';
@@ -50,6 +50,33 @@ router.patch(
   protect,
   authorize('DRIVER'), 
   startRide
+);
+
+// router.get(
+//   '/', 
+//   protect,
+//   authorize('ADMIN'), 
+//   getAllRides
+// );
+
+// router.get(
+//   '/user', 
+//   protect,
+//   authorize('RIDER'),  
+//   getUserRides
+// );
+
+// router.get(
+//   '/driver', 
+//   protect,
+//   authorize('DRIVER'), 
+//   getDriverRides
+// );
+
+router.get(
+  '/', 
+  protect, 
+  getRides
 );
 
 export default router;

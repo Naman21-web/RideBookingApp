@@ -293,3 +293,44 @@ export const startRide = async (
 
   return updatedRide;
 };
+
+// export const getAllRides = async (page = 1, limit = 10) => {
+//   return rideRepo.getAllRidesRepo(page, limit);
+// };
+
+// export const getUserRides = async (
+//   userId: string,
+//   page = 1,
+//   limit = 10
+// ) => {
+//   return rideRepo.getUserRidesRepo(userId, page, limit);
+// };
+
+// export const getDriverRides = async (
+//   driverId: string,
+//   page = 1,
+//   limit = 10
+// ) => {
+//   return rideRepo.getDriverRidesRepo(driverId, page, limit);
+// };
+
+export const getRides = async (
+  id: string,
+  page = 1,
+  limit = 10,
+  role: string
+) => {
+  if(role == 'RIDER'){
+    return rideRepo.getUserRidesRepo(id, page, limit);
+  }
+  else if(role == 'ADMIN'){
+    return rideRepo.getAllRidesRepo(page, limit);
+  }
+  else if(role == 'DRIVER'){
+    return rideRepo.getDriverRidesRepo(id, page, limit);
+  }
+  else{
+    throw new AppError("User Can't access all rides",STATUS_CODES.FORBIDDEN)
+  }
+};
+

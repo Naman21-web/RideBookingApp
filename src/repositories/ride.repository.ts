@@ -59,3 +59,53 @@ export const startRideRepo = async (rideId: string) => {
     },
   });
 };
+
+export const getAllRidesRepo = async (
+  page: number,
+  limit: number
+) => {
+  return prisma.ride.findMany({
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: { select: { id: true, name: true } },
+      driver: { select: { id: true, name: true } },
+      vehicle: true,
+    },
+  });
+};
+
+export const getUserRidesRepo = async (
+  userId: string,
+  page: number,
+  limit: number
+) => {
+  return prisma.ride.findMany({
+    where: { userId },
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      driver: { select: { id: true, name: true } },
+      vehicle: true,
+    },
+  });
+};
+
+export const getDriverRidesRepo = async (
+  driverId: string,
+  page: number,
+  limit: number
+) => {
+  return prisma.ride.findMany({
+    where: { driverId },
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: { select: { id: true, name: true } },
+      vehicle: true,
+    },
+  });
+};

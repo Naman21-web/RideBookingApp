@@ -68,3 +68,71 @@ export const startRide = asyncHandler(async (req: any, res) => {
 
   return successResponse(res, ride, 'Ride started successfully');
 });
+
+export const getAllRides = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const rides = await rideService.getAllRides(
+    Number(page),
+    Number(limit)
+  );
+
+  return successResponse(res, rides, 'All rides fetched');
+});
+
+export const getUserRides = asyncHandler(async (req: any, res) => {
+  const userId = req.user.userId;
+  const { page = 1, limit = 10 } = req.query;
+
+  const rides = await rideService.getUserRides(
+    userId,
+    Number(page),
+    Number(limit)
+  );
+
+  return successResponse(res, rides, 'User rides fetched');
+});
+
+export const getDriverRides = asyncHandler(async (req: any, res) => {
+  const driverId = req.user.userId;
+  const { page = 1, limit = 10 } = req.query;
+
+  const rides = await rideService.getDriverRides(
+    driverId,
+    Number(page),
+    Number(limit)
+  );
+
+  return successResponse(res, rides, 'Driver rides fetched');
+});
+
+export const getRides = asyncHandler(async(req:Request,res:Response) => {
+  const id =  req.user.userId;
+  const role = req.user.role;
+  const { page = 1, limit = 10 } = req.query;
+  // let rides;
+
+  // if(role == 'USER'){
+  //   rides = await rideService.getUserRides(
+  //     id,
+  //     Number(page),
+  //     Number(limit)
+  //   );
+  // }
+  // else if(role == 'ADMIN'){
+  //   rides = await rideService.getAllRides(
+  //     Number(page),
+  //     Number(limit)
+  //   );
+  // }
+  // else if(role == 'DRIVER'){
+  //   rides = await rideService.getDriverRides(
+  //     id,
+  //     Number(page),
+  //     Number(limit)
+  //   );
+  // }
+
+  const rides = await rideService.getRides(id,page,limit,role);
+  return successResponse(res, rides, 'Rides fetched');
+});
