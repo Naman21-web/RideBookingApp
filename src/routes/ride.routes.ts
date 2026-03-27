@@ -15,6 +15,7 @@ router.get(
 router.post(
   '/',
   protect,
+  authorize('RIDER'),
   validate(createRideSchema),
   createRide
 );
