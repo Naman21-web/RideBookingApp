@@ -28,6 +28,13 @@ export const loginUser = async (email: string, password: string) => {
   return { user, accessToken, refreshToken };
 };
 
+export const logoutService = async (userId: string) => {
+  await userRepo.updateUserRepo(userId,{ refreshToken: null });
+  
+
+  return true;
+};
+
 export const refreshAccessToken = async (refreshToken: string) => {
   if (!refreshToken) {
     throw new AppError('No refresh token', STATUS_CODES.UNAUTHORISED);
