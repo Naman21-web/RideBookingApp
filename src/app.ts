@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from "cookie-parser";
 import { errorHandler } from './middlewares/error.middleware';
 
 import userRoutes from './routes/user.routes';
@@ -22,6 +23,7 @@ app.use(
   })
 );
 app.use(requestLogger);
+app.use(cookieParser());
 
 app.use('/api/v1/users',userRoutes)
 

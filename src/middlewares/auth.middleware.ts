@@ -13,7 +13,7 @@ export const protect = (req: any, res: Response, next: NextFunction) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token,process.env.JWT_SECRET!);
     req.user = decoded;
     next();
   } catch {

@@ -12,6 +12,7 @@ datasource db {
 }
 
 model User {
+<<<<<<< Updated upstream
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
@@ -19,6 +20,21 @@ model User {
   password  String
   role      Role
   createdAt DateTime @default(now())
+=======
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  phone    String @unique
+  password String
+  role     Role   @default(RIDER)
+
+  refreshToken String? 
+
+  vehicles    Vehicle[]
+  rides       Ride[]    @relation("UserRides")
+  driverRides Ride[]    @relation("DriverRides")
+  createdAt   DateTime  @default(now())
+>>>>>>> Stashed changes
 }
 
 enum Role {
