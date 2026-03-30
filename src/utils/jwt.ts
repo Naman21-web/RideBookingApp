@@ -8,6 +8,22 @@ export const generateToken = (payload: object) => {
     });
 };
 
-export const verifyToken = (token:string) => {
-    return jwt.verify(token,JWT_SECRET);
+export const generateAccessToken = (user: any) => {
+  return jwt.sign(
+    { userId: user.id, role: user.role },
+    process.env.JWT_SECRET!,
+    { expiresIn: '15m' }
+  );
+};
+
+export const generateRefreshToken = (user: any) => {
+  return jwt.sign(
+    { userId: user.id },
+    process.env.JWT_REFRESH_SECRET!,
+    { expiresIn: '7d' }
+  );
+};
+
+export const verifyToken = (token:string, secret:string) => {
+    return jwt.verify(token, secret);
 }

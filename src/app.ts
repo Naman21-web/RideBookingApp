@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from "cookie-parser";
 import { errorHandler } from './middlewares/error.middleware';
 
 import userRoutes from './routes/user.routes';
@@ -10,6 +11,7 @@ import vehicleRoutes from './routes/vehicle.routes';
 import rideRoutes from './routes/ride.routes';
 import { requestLogger } from './middlewares/requestLogger.middleware';
 import logger from './utils/logger';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 
@@ -25,6 +27,7 @@ app.use(
   })
 );
 app.use(requestLogger);
+app.use(cookieParser());
 
 app.use('/api/v1/users',userRoutes)
 app.use('/api/v1/auth',authRoutes)
