@@ -3,6 +3,7 @@ import { calculateDistance } from "../utils/distance";
 import * as vehicleRepo from '../repositories/vehicle.repository';
 import * as rideRepo from '../repositories/ride.repository';
 import { AppError } from "../utils/AppError";
+import { getIO  } from "../config/socket";
 
 export const estimateFare = async (
   pickupLat: number,
@@ -60,37 +61,43 @@ export const createRide = async (
     throw new AppError('No matching vehicles found', STATUS_CODES.NOT_FOUND);
   }
 
-  // 3. Try locking driver (IMPORTANT)
-  let selectedDriverId: string | null = null;
-  let selectedVehicle: any = null;
+  // store queue in Redis
+  await redis.set(
+    `ride:${rideId}:drivers`,
+    JSON.stringify(driverIds)
+  );
 
-  for (const vehicle of vehicles) {
-    const lock = await vehicleRepo.goBusyRepo(vehicle.user.id);
+//   // 3. Try locking driver (IMPORTANT)
+//   let selectedDriverId: string | null = null;
+//   let selectedVehicle: any = null;
+
+//   for (const vehicle of vehicles) {
+//     const lock = await vehicleRepo.goBusyRepo(vehicle.user.id);
 
     
-    console.log("Lock Repo: ",lock);
+//     console.log("Lock Repo: ",lock);
 
-    if (lock) {
-        console.log("Busy Repo: ",vehicle);
-      selectedDriverId = vehicle.user.id;
-      selectedVehicle = vehicle;
+//     if (lock) {
+//         console.log("Busy Repo: ",vehicle);
+//       selectedDriverId = vehicle.user.id;
+//       selectedVehicle = vehicle;
 
-      console.log("Selected Vehicle: ",selectedVehicle,selectedDriverId);
-      // remove from available geo set
-      const available =  await vehicleRepo.goAvailableRepo(vehicle.user.id);
+//       console.log("Selected Vehicle: ",selectedVehicle,selectedDriverId);
+//       // remove from available geo set
+//       const available =  await vehicleRepo.goAvailableRepo(vehicle.user.id);
 
-      break;
-    }
-  }
+//       break;
+//     }
+//   }
 
-console.log("Selected Vehicle: ",selectedVehicle,selectedDriverId);
+// console.log("Selected Vehicle: ",selectedVehicle,selectedDriverId);
 
-  if (!selectedDriverId) {
-    throw new AppError('Drivers are busy, try again', STATUS_CODES.CONFLICT);
-  }
+//   if (!selectedDriverId) {
+//     throw new AppError('Drivers are busy, try again', STATUS_CODES.CONFLICT);
+//   }
 
-    const driverId =  selectedDriverId;
-    const vehicleId = selectedVehicle.id;
+//     const driverId =  selectedDriverId;
+//     const vehicleId = selectedVehicle.id;
 
     const distance = calculateDistance(data.pickupLat,data.pickupLng,data.dropLat,data.dropLng);
 
@@ -99,9 +106,12 @@ console.log("Selected Vehicle: ",selectedVehicle,selectedDriverId);
 
     const { vehicleType:type, ...rideData } = data;
   // 4. Create Ride in DB
-  const ride = await rideRepo.createRideRepo({...rideData,status:'REQUESTED',fare,distance,userId,driverId,vehicleId});
+  const ride = await rideRepo.createRideRepo({...rideData,status:'REQUESTED',fare,distance,userId});
+    // ,driverId,vehicleId});
 
-  await vehicleRepo.goActiveRepo(selectedDriverId);
+  // await vehicleRepo.goActiveRepo(selectedDriverId);
+
+  assignNextDriver(ride.id);
 
   return ride;
 };
@@ -188,6 +198,11 @@ export const completeRide = async (
     Number(ride.dropLat)
   );
 
+  const io = getIO();
+  io.to(`ride:${rideId}`).emit('rideCompleted', {
+    rideId,
+  });
+
   return updatedRide;
 };
 
@@ -213,11 +228,25 @@ export const acceptRide = async (
     );
   }
 
+  const currentDriver = await redis.get(
+    `ride:${rideId}:currentDriver`
+  );
+
+  if (currentDriver !== driverId) {
+    throw new AppError('Ride already assigned', 409);
+  }
+
   // Update DB
   const updatedRide = await rideRepo.updateRideStatusRepo(
     rideId,
     'ACCEPTED'
   );
+
+  const io = getIO();
+
+  io.to(`ride:${rideId}`).emit('rideAccepted', {
+    rideId
+  });
 
   return updatedRide;
 };
@@ -262,6 +291,13 @@ export const rejectRide = async (
     'REQUESTED'
   );
 
+  const io = getIO();
+  io.to(`ride:${rideId}`).emit('rideRejected', {
+    rideId
+  });
+
+  await assignNextDriver(rideId);
+  
   return updatedRide;
 };
 
@@ -290,6 +326,11 @@ export const startRide = async (
 
   // Update DB
   const updatedRide = await rideRepo.startRideRepo(rideId);
+
+  const io = getIO();
+  io.to(`ride:${rideId}`).emit('rideStarted', {
+    rideId,
+});
 
   return updatedRide;
 };
@@ -354,5 +395,87 @@ export const getRideDetailsById = async (
   }
 
   return ride;
+};
+
+export const assignNextDriver = async (rideId: string) => {
+  const data = await redis.get(`ride:${rideId}:drivers`);
+
+  if (!data) return;
+
+  let drivers: string[] = JSON.parse(data);
+
+  if (!drivers.length) {
+    throw new AppError('No drivers available', 404);
+  }
+
+  const driverId = drivers.shift(); // get first driver
+
+  // update Redis queue
+  await redis.set(
+    `ride:${rideId}:drivers`,
+    JSON.stringify(drivers)
+  );
+
+  // mark driver busy (lock)
+  const lock = await vehicleRepo.goBusyRepo(driverId);
+
+  if (!lock) {
+    // driver already busy → try next
+    return assignNextDriver(rideId);
+  }
+
+  // store current assigned driver
+  await redis.set(`ride:${rideId}:currentDriver`, driverId);
+
+  // notify driver via socket
+  const io = getIO();
+
+  io.to(`driver:${driverId}`).emit('newRideRequest', {
+    rideId,
+  });
+
+  // start timeout
+  setDriverTimeout(rideId, driverId);
+};
+
+export const assignNextDriver = async (rideId: string) => {
+  const data = await redis.get(`ride:${rideId}:drivers`);
+
+  if (!data) return;
+
+  let drivers: string[] = JSON.parse(data);
+
+  if (!drivers.length) {
+    throw new AppError('No drivers available', 404);
+  }
+
+  const driverId = drivers.shift(); // get first driver
+
+  // update Redis queue
+  await redis.set(
+    `ride:${rideId}:drivers`,
+    JSON.stringify(drivers)
+  );
+
+  // mark driver busy (lock)
+  const lock = await vehicleRepo.goBusyRepo(driverId);
+
+  if (!lock) {
+    // driver already busy → try next
+    return assignNextDriver(rideId);
+  }
+
+  // store current assigned driver
+  await redis.set(`ride:${rideId}:currentDriver`, driverId);
+
+  // notify driver via socket
+  const io = getIO();
+
+  io.to(`driver:${driverId}`).emit('newRideRequest', {
+    rideId,
+  });
+
+  // start timeout
+  setDriverTimeout(rideId, driverId);
 };
 
