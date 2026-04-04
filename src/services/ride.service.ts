@@ -33,12 +33,87 @@ export const estimateFare = async (
   return fares;
 };
 
+
+export const assignNextDriver = async (rideId: string) => {
+  const drivers: (string | null)[] = await vehicleRepo.getDriversForRideRepo(rideId);
+
+  if (!drivers) return;
+
+  // let drivers: string[] = JSON.parse(data);
+
+  if (!drivers.length) {
+    throw new AppError('No drivers available', STATUS_CODES.NOT_FOUND);
+  }
+
+  const driverId: string = drivers.shift(); // get first driver
+
+  // update Redis queue
+  await vehicleRepo.setDriversForRideRepo(rideId, drivers);
+
+  // mark driver busy (lock)
+  const lock = await vehicleRepo.goBusyRepo(driverId);
+
+  if (!lock) {
+    // driver already busy → try next
+    return assignNextDriver(rideId);
+  }
+
+  
+
+  // notify driver via socket
+  const io = getIO();
+
+  io.to(`driver:${driverId}`).emit('newRideRequest', {
+    rideId,
+  });
+
+  await vehicleRepo.setCurrentTempDriverForRideRepo(rideId, driverId);
+
+  console.log(`Notified driver ${driverId} about ride ${rideId}`);
+
+  // start timeout
+  setDriverTimeout(rideId, driverId);
+};
+
+
+const DRIVER_RESPONSE_TIMEOUT = 30000; // 30 sec
+
+const setDriverTimeout = (rideId: string, driverId: string) => {
+  console.log(`Setting response timeout for driver ${driverId} on ride ${rideId}`);
+  setTimeout(async () => {
+    const currentDriver = await vehicleRepo.getCurrentDriverForRideRepo(rideId);
+
+    console.log(`Timeout check for ride ${rideId}: current driver is ${currentDriver}, expected ${driverId}`);
+
+    // if still same driver → no response
+    if (currentDriver !== driverId) {
+      console.log('Driver timeout, reassigning...');
+
+      // release lock
+      await vehicleRepo.goAvailableRepo(driverId);
+
+      // assign next driver
+      await assignNextDriver(rideId);
+    }
+  }, DRIVER_RESPONSE_TIMEOUT);
+};
+
+
 export const createRide = async (
   userId: string,
   data: any
 ) => {
   const { pickupLat, pickupLng, dropLat, dropLng, vehicleType } = data;
-
+  
+  const distance = calculateDistance(pickupLat,pickupLng,dropLat,dropLng);
+  
+  const fare = PRICING[vehicleType].baseFare +
+  distance * PRICING[vehicleType].perKm;
+  
+  const { vehicleType:type, ...rideData } = data;
+  // 4. Create Ride in DB
+  const ride = await rideRepo.createRideRepo({...rideData,status:'REQUESTED',fare,distance,userId});
+  
   // 1. Get nearby drivers (ONLY available ones)
   const driverIds:(string | null)[] = await vehicleRepo.getNearbyDriverIdsRepo(
       pickupLat,
@@ -51,21 +126,23 @@ export const createRide = async (
     throw new AppError('No drivers available nearby', STATUS_CODES.NOT_FOUND);
   }
 
-  // 2. Fetch vehicles for these drivers
   const vehicles =  await vehicleRepo.getVehiclesByUserIdsRepo(driverIds,vehicleType);
 
-      console.log("Vehicles: ",vehicles)    
+  const availableDriverIds = vehicles.map(v => v.user.id);
+
+  await vehicleRepo.setDriversForRideRepo(ride.id, availableDriverIds);
 
 
-  if (!vehicles.length) {
-    throw new AppError('No matching vehicles found', STATUS_CODES.NOT_FOUND);
-  }
 
-  // store queue in Redis
-  await redis.set(
-    `ride:${rideId}:drivers`,
-    JSON.stringify(driverIds)
-  );
+//   // 2. Fetch vehicles for these drivers
+//   const vehicles =  await vehicleRepo.getVehiclesByUserIdsRepo(driverIds,vehicleType);
+
+//       console.log("Vehicles: ",vehicles)    
+
+
+//   if (!vehicles.length) {
+//     throw new AppError('No matching vehicles found', STATUS_CODES.NOT_FOUND);
+//   }
 
 //   // 3. Try locking driver (IMPORTANT)
 //   let selectedDriverId: string | null = null;
@@ -99,15 +176,6 @@ export const createRide = async (
 //     const driverId =  selectedDriverId;
 //     const vehicleId = selectedVehicle.id;
 
-    const distance = calculateDistance(data.pickupLat,data.pickupLng,data.dropLat,data.dropLng);
-
-    const fare = PRICING[data.vehicleType].baseFare +
-    distance * PRICING[data.vehicleType].perKm;
-
-    const { vehicleType:type, ...rideData } = data;
-  // 4. Create Ride in DB
-  const ride = await rideRepo.createRideRepo({...rideData,status:'REQUESTED',fare,distance,userId});
-    // ,driverId,vehicleId});
 
   // await vehicleRepo.goActiveRepo(selectedDriverId);
 
@@ -216,8 +284,12 @@ export const acceptRide = async (
     throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
   }
 
+  const currentDriver = await vehicleRepo.getCurrentTempDriverForRideRepo(rideId);
+
+  console.log(`Accept ride ${rideId} by driver ${driverId}, current assigned driver is ${currentDriver}`);
+
   // Only assigned driver can accept
-  if (ride.driverId !== driverId) {
+  if (currentDriver !== driverId) {
     throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
   }
 
@@ -228,19 +300,22 @@ export const acceptRide = async (
     );
   }
 
-  const currentDriver = await redis.get(
-    `ride:${rideId}:currentDriver`
-  );
-
-  if (currentDriver !== driverId) {
-    throw new AppError('Ride already assigned', 409);
-  }
-
   // Update DB
   const updatedRide = await rideRepo.updateRideStatusRepo(
     rideId,
     'ACCEPTED'
   );
+
+  //Get veqhicle details
+  const vehicle = await vehicleRepo.getVehicleByUserIdRepo(driverId);
+
+    //Update ride with driver
+  await rideRepo.updateRideDriverRepo(rideId, {vehicleId: vehicle.id, driverId});
+
+  await vehicleRepo.goActiveRepo(driverId);
+
+  // store current assigned driver
+  await vehicleRepo.setCurrentDriverForRideRepo(rideId, driverId);
 
   const io = getIO();
 
@@ -260,8 +335,12 @@ export const rejectRide = async (
   if (!ride) {
     throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
   }
+  
+  const currentDriver = await vehicleRepo.getCurrentTempDriverForRideRepo(rideId);
 
-  if (ride.driverId !== driverId) {
+  console.log(`Reject ride ${rideId} by driver ${driverId}, current assigned driver is ${currentDriver}`);
+
+  if (currentDriver !== driverId) {
     throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
   }
 
@@ -296,8 +375,6 @@ export const rejectRide = async (
     rideId
   });
 
-  await assignNextDriver(rideId);
-  
   return updatedRide;
 };
 
@@ -395,87 +472,5 @@ export const getRideDetailsById = async (
   }
 
   return ride;
-};
-
-export const assignNextDriver = async (rideId: string) => {
-  const data = await redis.get(`ride:${rideId}:drivers`);
-
-  if (!data) return;
-
-  let drivers: string[] = JSON.parse(data);
-
-  if (!drivers.length) {
-    throw new AppError('No drivers available', 404);
-  }
-
-  const driverId = drivers.shift(); // get first driver
-
-  // update Redis queue
-  await redis.set(
-    `ride:${rideId}:drivers`,
-    JSON.stringify(drivers)
-  );
-
-  // mark driver busy (lock)
-  const lock = await vehicleRepo.goBusyRepo(driverId);
-
-  if (!lock) {
-    // driver already busy → try next
-    return assignNextDriver(rideId);
-  }
-
-  // store current assigned driver
-  await redis.set(`ride:${rideId}:currentDriver`, driverId);
-
-  // notify driver via socket
-  const io = getIO();
-
-  io.to(`driver:${driverId}`).emit('newRideRequest', {
-    rideId,
-  });
-
-  // start timeout
-  setDriverTimeout(rideId, driverId);
-};
-
-export const assignNextDriver = async (rideId: string) => {
-  const data = await redis.get(`ride:${rideId}:drivers`);
-
-  if (!data) return;
-
-  let drivers: string[] = JSON.parse(data);
-
-  if (!drivers.length) {
-    throw new AppError('No drivers available', 404);
-  }
-
-  const driverId = drivers.shift(); // get first driver
-
-  // update Redis queue
-  await redis.set(
-    `ride:${rideId}:drivers`,
-    JSON.stringify(drivers)
-  );
-
-  // mark driver busy (lock)
-  const lock = await vehicleRepo.goBusyRepo(driverId);
-
-  if (!lock) {
-    // driver already busy → try next
-    return assignNextDriver(rideId);
-  }
-
-  // store current assigned driver
-  await redis.set(`ride:${rideId}:currentDriver`, driverId);
-
-  // notify driver via socket
-  const io = getIO();
-
-  io.to(`driver:${driverId}`).emit('newRideRequest', {
-    rideId,
-  });
-
-  // start timeout
-  setDriverTimeout(rideId, driverId);
 };
 

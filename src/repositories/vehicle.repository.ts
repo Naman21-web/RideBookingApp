@@ -165,3 +165,36 @@ export const completeRideRepo = async (rideId: string) => {
   });
 };
 
+export const setDriversForRideRepo = async (rideId: string, driverIds: (string | null)[]) => {
+
+  await redis.set(
+      `ride:${rideId}:drivers`,
+      JSON.stringify(driverIds)
+  );
+};
+
+export const getDriversForRideRepo = async (rideId: string): Promise<(string | null)[]> => {
+  const data = await redis.get(`ride:${rideId}:drivers`);
+    console.log(`Get current driver for ride ${rideId}`,data,rideId);
+  if (!data) return [];
+  return JSON.parse(data);
+};
+
+export const setCurrentDriverForRideRepo = async (rideId: string, driverId: string) => {
+  await redis.set(`ride:${rideId}:currentDriver`, driverId);
+  console.log(`Set current driver ${driverId} for ride ${rideId}`,driverId,rideId);
+};
+
+export const getCurrentDriverForRideRepo = async (rideId: string): Promise<string | null> => {
+  return await redis.get(`ride:${rideId}:currentDriver`);
+};
+
+export const setCurrentTempDriverForRideRepo = async (rideId: string, driverId: string) => {
+  await redis.set(`ride:${rideId}:currentTempDriver`, driverId);
+  console.log(`Set current Temp driver ${driverId} for ride ${rideId}`,driverId,rideId);
+};
+
+export const getCurrentTempDriverForRideRepo = async (rideId: string): Promise<string | null> => {
+  return await redis.get(`ride:${rideId}:currentTempDriver`);
+};
+

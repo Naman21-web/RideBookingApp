@@ -8,7 +8,32 @@ export const createRideRepo = async (data:CreateRideInput): Promise<Ride> => {
 
     console.log("Data: ",data);
 
-    return prisma.ride.create({data});
+    const {userId,...rideData} = data;
+
+    rideData.user = { connect: { id: userId } };
+
+    // console.log("rideData: ",rideData);
+    // rideData.driverId = null;
+
+    // const rideNewData = {
+    //   pickupLat: 23.25,
+    //   pickupLng: 77.41,
+    //   dropLat: 23.3,
+    //   dropLng: 77.45,
+    //   status: "REQUESTED",
+    //   fare: 98.99,
+    //   distance: 6.89,
+
+    //   user: {
+    //     connect: {
+    //       id: "5f430f6d-0f0c-4d7b-8ff3-0fab37772320"
+    //     }
+    //   },
+
+    // };
+
+
+    return prisma.ride.create({data:rideData});
 };
 
 export const getRideByIdRepo = async (rideId: string) => {
@@ -117,6 +142,19 @@ export const getRideDetailsByIdRepo = async (rideId: string) => {
       user: { select: { id: true, name: true } },
       driver: { select: { id: true, name: true } },
       vehicle: true,
+    },
+  });
+};
+
+export const updateRideDriverRepo = async (
+  rideId: string,
+  data: { driverId: string; vehicleId: string }
+) => {
+  return prisma.ride.update({
+    where: { id: rideId },
+    data: {
+      driverId: data.driverId,
+      vehicleId: data.vehicleId,
     },
   });
 };
