@@ -10,8 +10,6 @@ export const initSocket = (server: any) => {
     },
   });
 
-  console.log('Socket.io initialized');
-
   io.on('connection', (socket) => {
     socket.on('register',(userId:string) => {
         userSocketMap.set(userId, socket.id);

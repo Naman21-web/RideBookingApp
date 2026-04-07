@@ -166,7 +166,6 @@ export const completeRideRepo = async (rideId: string) => {
 };
 
 export const setDriversForRideRepo = async (rideId: string, driverIds: (string | null)[]) => {
-
   await redis.set(
       `ride:${rideId}:drivers`,
       JSON.stringify(driverIds)

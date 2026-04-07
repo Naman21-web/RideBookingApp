@@ -12,7 +12,7 @@ export const generateAccessToken = (user: any) => {
   return jwt.sign(
     { userId: user.id, role: user.role },
     process.env.JWT_SECRET!,
-    { expiresIn: '15m' }
+    { expiresIn: '1h' }
   );
 };
 

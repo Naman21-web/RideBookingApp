@@ -4,6 +4,7 @@ import * as vehicleRepo from '../repositories/vehicle.repository';
 import * as rideRepo from '../repositories/ride.repository';
 import { AppError } from "../utils/AppError";
 import { getIO  } from "../config/socket";
+import { rideQueue } from "../queues/ride.queue";
 
 export const estimateFare = async (
   pickupLat: number,
@@ -42,7 +43,13 @@ export const assignNextDriver = async (rideId: string) => {
   // let drivers: string[] = JSON.parse(data);
 
   if (!drivers.length) {
-    throw new AppError('No drivers available', STATUS_CODES.NOT_FOUND);
+    // throw new AppError('No drivers available', STATUS_CODES.NOT_FOUND);
+    console.log('No drivers available for ride', rideId);
+    const io = getIO();
+    io.to(`ride:${rideId}`).emit('noDrivers', {
+      message: 'No drivers available',
+    });
+    return;
   }
 
   const driverId: string = drivers.shift(); // get first driver
@@ -76,26 +83,42 @@ export const assignNextDriver = async (rideId: string) => {
 };
 
 
-const DRIVER_RESPONSE_TIMEOUT = 30000; // 30 sec
+// const setDriverTimeout = (rideId: string, driverId: string) => {
+//   console.log(`Setting response timeout for driver ${driverId} on ride ${rideId}`);
+//   setTimeout(async () => {
+//     const currentDriver = await vehicleRepo.getCurrentDriverForRideRepo(rideId);
 
-const setDriverTimeout = (rideId: string, driverId: string) => {
+//     console.log(`Timeout check for ride ${rideId}: current driver is ${currentDriver}, expected ${driverId}`);
+
+//     // if still same driver → no response
+//     if (currentDriver !== driverId) {
+//       console.log('Driver timeout, reassigning...');
+
+//       // release lock
+//       await vehicleRepo.goAvailableRepo(driverId);
+
+//       // assign next driver
+//       await assignNextDriver(rideId);
+//     }
+//   }, DRIVER_RESPONSE_TIMEOUT);
+// };
+
+const DRIVER_RESPONSE_TIMEOUT = 60000; // 30 sec
+
+const setDriverTimeout = async (rideId: string, driverId: string) => {
   console.log(`Setting response timeout for driver ${driverId} on ride ${rideId}`);
-  setTimeout(async () => {
-    const currentDriver = await vehicleRepo.getCurrentDriverForRideRepo(rideId);
-
-    console.log(`Timeout check for ride ${rideId}: current driver is ${currentDriver}, expected ${driverId}`);
-
-    // if still same driver → no response
-    if (currentDriver !== driverId) {
-      console.log('Driver timeout, reassigning...');
-
-      // release lock
-      await vehicleRepo.goAvailableRepo(driverId);
-
-      // assign next driver
-      await assignNextDriver(rideId);
+  await rideQueue.add(
+    'driverTimeout',
+    {
+      rideId,
+      driverId,
+    },
+    {
+      delay: DRIVER_RESPONSE_TIMEOUT,
+      attempts: 3,  // optional retry
     }
-  }, DRIVER_RESPONSE_TIMEOUT);
+  );
+  console.log(`Driver timeout job added to queue for driver ${driverId} on ride ${rideId}`);
 };
 
 
@@ -129,6 +152,8 @@ export const createRide = async (
   const vehicles =  await vehicleRepo.getVehiclesByUserIdsRepo(driverIds,vehicleType);
 
   const availableDriverIds = vehicles.map(v => v.user.id);
+
+  console.log("Available DriverIds: ",availableDriverIds);
 
   await vehicleRepo.setDriversForRideRepo(ride.id, availableDriverIds);
 
@@ -179,7 +204,21 @@ export const createRide = async (
 
   // await vehicleRepo.goActiveRepo(selectedDriverId);
 
-  assignNextDriver(ride.id);
+  assignNextDriver(ride.id).catch(async (err) => {
+    console.error('Driver assignment failed:', err);
+
+    // // optional: update ride status
+    // await rideRepo.updateRideStatus(ride.id, 'CANCELLED');
+
+    // // optional: notify user via pub/sub
+    // await publishEvent('ride-events', {
+    //   type: 'NO_DRIVERS',
+    //   rideId: ride.id,
+    // });
+    // throw new AppError('No drivers available', STATUS_CODES.NOT_FOUND);
+    // throw err;
+    // throw new AppError('No drivers available', STATUS_CODES.NOT_FOUND);
+  });;
 
   return ride;
 };
@@ -190,12 +229,14 @@ export const cancelRide = async (
 ) => {
   const ride = await rideRepo.getRideByIdRepo(rideId);
 
+  console.log(`Cancelling ride ${rideId} by user ${userId}`,ride);
+
   if (!ride) {
     throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
   }
 
   // Optional: ensure only owner can cancel
-  if (ride.userId !== userId) {
+  if ((ride.userId !== userId && ride.driverId !== userId) || ride.status === 'ONGOING' ) {
     throw new AppError('Unauthorized', STATUS_CODES.FORBIDDEN);
   }
 
@@ -210,6 +251,15 @@ export const cancelRide = async (
   // 1. Update DB
   const updatedRide = await rideRepo.cancelRideRepo(rideId);
 
+  console.log(`Ride cancelled: ${rideId}`, updatedRide);
+
+  // notify driver,user via socket
+  const io = getIO();
+
+  io.to(`ride:${rideId}`).emit('rideCancelled', {
+    rideId,
+  });
+
   // 2. Handle Redis 
 
   const driverId = ride.driverId;
@@ -217,7 +267,7 @@ export const cancelRide = async (
   if (driverId) {
     vehicleRepo.goInactiveRepo(driverId);
 
-    // add driver back to geo set
+    // add driver back to geo set //Need to comment it later afer testing 
     await vehicleRepo.changeVehcileLocationRepo(
       driverId,
       Number(ride.pickupLng),
@@ -279,6 +329,8 @@ export const acceptRide = async (
   driverId: string
 ) => {
   const ride = await rideRepo.getRideByIdRepo(rideId);
+
+  console.log(`Accepting ride ${rideId} by driver ${driverId}`);
 
   if (!ride) {
     throw new AppError('Ride not found', STATUS_CODES.NOT_FOUND);
